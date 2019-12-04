@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source "./lib/bash/core.sh"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Deploying app..."
+
+}
+
+main "$@"

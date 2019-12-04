@@ -1,0 +1,39 @@
+{
+  "deployEnvkey": {
+    "develop": [
+      ""
+    ],
+    "release/.*": [
+      ""
+    ],
+    "hotfix/.*": [
+      ""
+    ],
+    "master": [
+      ""
+    ],
+    ".*": [
+      ""
+    ]
+  },
+  "testEnvkey": {
+    "develop": [
+      ""
+    ],
+    "release/.*": [
+      ""
+    ],
+    "hotfix/.*": [
+      ""
+    ],
+    "master": [
+      ""
+    ],
+    ".*": [
+      ""
+    ]
+  },
+  "slack": {
+    "channel": "jenkins"
+  }
+}

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+source "./lib/bash/core.sh"
+source "./lib/bash/go.sh"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Building app..."
+
+  local GO_WORKSPACE="${PWD}"
+  export GOPATH="${HOME}/go"
+
+  export GO111MODULE="on"
+
+  local MODULE_PATH
+  MODULE_PATH="./src/inkr.com/go.mod"
+  MODULE_PATH="${MODULE_PATH%/*}"
+
+  local TARGET="${1:-}"
+  if [[ -z "${TARGET:-}" ]]; then
+    TARGET="main"
+  else
+    shift
+  fi
+
+  local TARGET_FILE
+  TARGET_FILE="$(jq --raw-output ".targets.${TARGET}" "./project.config.json")"
+  if [[ "${TARGET_FILE}" == "null" ]]; then
+    TARGET_FILE="./main.go"
+  fi
+
+  GO="$(command -v "go")"
+
+  (
+    set -x
+    cd "${MODULE_PATH}" || return 1
+    "${GO}" build \
+      -o "${GO_WORKSPACE}/build/main" \
+      "${TARGET_FILE}" \
+      "$@"
+  )
+
+}
+
+main "$@"

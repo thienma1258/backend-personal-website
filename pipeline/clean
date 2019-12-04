@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source "./lib/bash/core.sh"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Cleaning...${NO_COLOR}"
+
+  (
+    set -x
+
+    git remote remove "zboilerplate" 2>/dev/null || true
+
+    rm -rf "./build"
+    rm -rf "./bin"
+    rm -rf "./vendor"
+  )
+
+  if [[ -d "./pkg" ]]; then
+    (
+      set -x
+      chmod -R u+rwx "./pkg"
+      rm -rf "./pkg"
+    )
+  fi
+
+}
+
+main "$@"

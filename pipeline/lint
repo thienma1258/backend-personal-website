@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+source "./lib/bash/core.sh"
+source "./lib/bash/go.sh"
+
+dependency "shellcheck"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Linting code..."
+
+  (
+    set -x
+    shellcheck \
+      --external-sources \
+      "./.bin/"* \
+      "./lib/bash/"* \
+      "./pipeline/"*
+  )
+
+  export GOPATH="${HOME}/go"
+
+  export GO111MODULE="on"
+
+  local MODULE_PATH
+  MODULE_PATH="./src/inkr.com/go.mod"
+  MODULE_PATH="${MODULE_PATH%/*}"
+
+  GO111MODULE="off" go get -u "github.com/golangci/golangci-lint/cmd/golangci-lint"
+
+  local GO_LINT="${GOPATH}/bin/golangci-lint"
+  if [[ ! -f "${GO_LINT}" ]]; then
+    (
+      set -x
+      curl -sfL "https://install.goreleaser.com/github.com/golangci/golangci-lint.sh" |
+        sh -s -- -b "${GOPATH}/bin" "latest"
+    )
+  fi
+
+  (
+    set -x
+    cd "${MODULE_PATH}" || return 1
+    "${GO_LINT}" run \
+      --fast \
+      "./..."
+  )
+
+}
+
+main "$@"

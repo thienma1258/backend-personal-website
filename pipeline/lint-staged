@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+source "./lib/bash/core.sh"
+source "./lib/bash/go.sh"
+
+dependency "shellcheck"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Linting staged changes..."
+
+  if ! git merge HEAD >/dev/null; then
+    return
+  fi
+
+  echo "Stashing changes now..."
+
+  local STASHING_OUTPUT
+  STASHING_OUTPUT="$(
+    git stash push \
+      --keep-index \
+      --include-untracked \
+      --message "boilerplate-lint-staged"
+  )"
+
+  # Remove unwanted untracked files (from staged deleted files)
+  git clean -f -d
+
+  echo
+  echo "${STASHING_OUTPUT}"
+  echo
+
+  local STASH_EXISTS
+  if [[ "${STASHING_OUTPUT}" != "No local changes to save" ]]; then
+    STASH_EXISTS=true
+  fi
+
+  SHELL_FILES=()
+
+  local FILE_PATHS
+  FILE_PATHS="$(
+    git status --porcelain |
+      (grep -E '^M|^A|^R' || true) |
+      sed -E "s|^ *[A-Z]+ +||" |
+      sed -E "s|^.+-> +||"
+  )"
+
+  while IFS='' read -r FILE_PATH; do
+
+    if [[ ! -f "${FILE_PATH}" ]]; then
+      continue
+    fi
+
+    local FILE="${FILE_PATH##*/}"
+
+    local EXTENSION="${FILE##*.}"
+    if [[ "${EXTENSION}" == "${FILE}" ]]; then
+      EXTENSION=""
+    fi
+    if [[ -n "${EXTENSION}" ]]; then
+      EXTENSION="$(tr '[:upper:]' '[:lower:]' <<<"${EXTENSION}")"
+    fi
+
+    if [[ -z "${EXTENSION}" ]]; then
+      local FIRST_LINE
+      FIRST_LINE=$(head -n 1 "${FILE_PATH}")
+      if [[ "${FIRST_LINE}" == "#!/"*"bash" ]]; then
+        SHELL_FILES+=("${FILE_PATH}")
+      fi
+    elif [[ "${EXTENSION}" == "sh" || "${EXTENSION}" == "bash" ]]; then
+      SHELL_FILES+=("${FILE_PATH}")
+    fi
+
+  done <<<"${FILE_PATHS}"
+
+  if ((${#SHELL_FILES[@]} > 0)); then
+    set +e
+    (
+      set -x
+      shellcheck \
+        --external-sources \
+        "${SHELL_FILES[@]}"
+    )
+    local EXIT_CODE=$?
+    if ((EXIT_CODE != 0)); then
+      (
+        set -x
+        git stash pop || true
+      )
+      return ${EXIT_CODE}
+    fi
+    set -e
+  fi
+
+  if [[ -n "${STASH_EXISTS:-}" ]]; then
+    (
+      set -x
+      git stash pop
+    )
+  fi
+
+}
+
+main "$@"

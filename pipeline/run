@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+export BOILERPLATE_NO_COLOR="true"
+export BOILERPLATE_NO_EMPTY_LINE="true"
+
+source "./lib/bash/core.sh"
+source "./lib/bash/go.sh"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Running app..."
+
+  loadEnvKey
+
+  local PROJECT_KEY
+  PROJECT_KEY="$(projectKey)"
+
+  local LOG_FILE
+  LOG_FILE="$(mktemp)"
+
+  set +e
+  (
+    set -x
+    time \
+      BOILERPLATE_LOG_TIME="true" \
+      wrap \
+      "./build/main" "$@" |
+      tee "${LOG_FILE}"
+  )
+  local EXIT_CODE="$?"
+  set -e
+
+  echo
+  echo "EXIT_CODE = ${EXIT_CODE}"
+
+  if [[ "${EXIT_CODE}" != 0 ]]; then
+
+    local DATA
+    DATA="$(
+      echo '{}' |
+        jq \
+          --compact-output \
+          --arg projectKey "${PROJECT_KEY}" \
+          --arg exitCode "${EXIT_CODE}" \
+          --arg consoleLog "$(tail -100 <"${LOG_FILE}")" \
+          '.main = {
+            "attachments": [
+              {
+                "fallback": "[\($projectKey)] crashed with exit code \($exitCode)",
+                "color": "danger",
+                "title": "\($projectKey)",
+                "text": "*\($projectKey)* crashed with exit code \($exitCode).\n==========\n*Console Log*\n...\n\($consoleLog)\n==========",
+              }
+            ]
+          } | .main'
+    )"
+    # echo "DATA = '${DATA}'"
+
+    (
+      set -x
+      slack-send "${DATA}"
+    )
+
+  fi
+
+  rm -rf "${LOG_FILE}"
+
+  return "${EXIT_CODE}"
+}
+
+main "$@"

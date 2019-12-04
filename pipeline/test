@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+source "./lib/bash/core.sh"
+source "./lib/bash/go.sh"
+
+function main() {
+
+  echo -e "${OK_COLOR}==> Testing app..."
+
+  loadEnvKey
+
+  export GOPATH="${HOME}/go"
+
+  export GO111MODULE="on"
+
+  local MODULE_PATH
+  MODULE_PATH="./src/inkr.com/go.mod"
+  MODULE_PATH="${MODULE_PATH%/*}"
+
+  GO="$(command -v "go")"
+
+  (
+    set -x
+
+    cd "${MODULE_PATH}" || return 1
+
+    "${GO}" clean \
+      -testcache ||
+      true
+
+    "${GO}" test \
+      -v \
+      -cover \
+      "./..."
+  )
+
+}
+
+main "$@"
