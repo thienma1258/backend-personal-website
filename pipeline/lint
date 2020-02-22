@@ -13,7 +13,6 @@ function main() {
     set -x
     shellcheck \
       --external-sources \
-      "./.bin/"* \
       "./lib/bash/"* \
       "./pipeline/"*
   )
@@ -23,7 +22,7 @@ function main() {
   export GO111MODULE="on"
 
   local MODULE_PATH
-  MODULE_PATH="./src/inkr.com/go.mod"
+  MODULE_PATH="./go.mod"
   MODULE_PATH="${MODULE_PATH%/*}"
 
   GO111MODULE="off" go get -u "github.com/golangci/golangci-lint/cmd/golangci-lint"

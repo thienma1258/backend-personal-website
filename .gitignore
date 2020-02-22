@@ -1,0 +1,20 @@
+# Common
+.env
+.env.*
+build/
+
+# NodeJS (due to large number of files)
+node_modules/
+
+# Go
+bin/
+pkg/
+
+#idea
+.idea
+# Terraform
+terraform/.terraform
+terraform/variables.tfvars
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfplan
